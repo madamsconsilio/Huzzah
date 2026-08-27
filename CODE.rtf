@@ -1,431 +1,235 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;\f1\fnil\fcharset0 .SFNS-Regular_wdth_opsz118000_GRAD_wght2580000;\f2\froman\fcharset0 Times-Roman;
-\f3\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;}
-{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red109\green109\blue109;\red38\green38\blue38;
-\red83\green83\blue83;\red246\green246\blue246;\red7\green68\blue184;\red194\green11\blue35;\red18\green82\blue31;
-\red6\green33\blue79;\red255\green255\blue255;\red91\green40\blue180;\red129\green40\blue2;\red27\green31\blue34;
-\red87\green96\blue106;}
-{\*\expandedcolortbl;;\cssrgb\c0\c0\c0\c84706;\cssrgb\c50196\c50196\c50196;\cssrgb\c20000\c20000\c20000;
-\cssrgb\c40000\c40000\c40000;\cssrgb\c97255\c97255\c97255;\cssrgb\c0\c36078\c77255;\cssrgb\c81176\c13333\c18039;\cssrgb\c6667\c38824\c16078;
-\cssrgb\c1176\c18431\c38431;\cssrgb\c100000\c100000\c100000;\cssrgb\c43529\c25882\c75686;\cssrgb\c58431\c21961\c0;\cssrgb\c14118\c16078\c18039;
-\cssrgb\c41569\c45098\c49020;}
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Bold;\f1\froman\fcharset0 Times-Roman;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 \margl1440\margr1440\vieww11520\viewh8400\viewkind0
 \deftab720
 \pard\pardeftab720\sa280\partightenfactor0
 
-\f0\fs28 \cf2 \expnd0\expndtw0\kerning0
-To replicate this workflow in Relativity (collecting user inputs in a Custom Page/UI, then calling Claude / an LLM API to process Relativity documents or metadata), here is the architecture and end-to-end implementation pattern.\
-\pard\pardeftab720\partightenfactor0
-\cf3 \
-\pard\pardeftab720\sa320\partightenfactor0
+\f0\b\fs28 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 1. Floodgate Service (FloodgateClient.cs)\
+\pard\pardeftab720\sa240\partightenfactor0
 
-\f1\b\fs35 \cf2 Architecture Overview\
+\f1\b0\fs24 \cf0 This class runs the appleconnect command to fetch the OIDC id-token, and then calls the Floodgate endpoint with the Bearer token:\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs32 \cf2 #mermaid-1787798101994\{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;fill:#333;\}#mermaid-1787798101994 .error-icon\{fill:#552222;\}#mermaid-1787798101994 .error-text\{fill:#552222;stroke:#552222;\}#mermaid-1787798101994 .edge-thickness-normal\{stroke-width:2px;\}#mermaid-1787798101994 .edge-thickness-thick\{stroke-width:3.5px;\}#mermaid-1787798101994 .edge-pattern-solid\{stroke-dasharray:0;\}#mermaid-1787798101994 .edge-pattern-dashed\{stroke-dasharray:3;\}#mermaid-1787798101994 .edge-pattern-dotted\{stroke-dasharray:2;\}#mermaid-1787798101994 .marker\{fill:#333333;stroke:#333333;\}#mermaid-1787798101994 .marker.cross\{stroke:#333333;\}#mermaid-1787798101994 svg\{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;\}#mermaid-1787798101994 .label\{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#333;\}#mermaid-1787798101994 .cluster-label text\{fill:#333;\}#mermaid-1787798101994 .cluster-label span,#mermaid-1787798101994 p\{color:#333;\}#mermaid-1787798101994 .label text,#mermaid-1787798101994 span,#mermaid-1787798101994 p\{fill:#333;color:#333;\}#mermaid-1787798101994 .node rect,#mermaid-1787798101994 .node circle,#mermaid-1787798101994 .node ellipse,#mermaid-1787798101994 .node polygon,#mermaid-1787798101994 .node path\{fill:#ECECFF;stroke:#9370DB;stroke-width:1px;\}#mermaid-1787798101994 .flowchart-label text\{text-anchor:middle;\}#mermaid-1787798101994 .node .katex path\{fill:#000;stroke:#000;stroke-width:1px;\}#mermaid-1787798101994 .node .label\{text-align:center;\}#mermaid-1787798101994 .node.clickable\{cursor:pointer;\}#mermaid-1787798101994 .arrowheadPath\{fill:#333333;\}#mermaid-1787798101994 .edgePath .path\{stroke:#333333;stroke-width:2.0px;\}#mermaid-1787798101994 .flowchart-link\{stroke:#333333;fill:none;\}#mermaid-1787798101994 .edgeLabel\{background-color:#e8e8e8;text-align:center;\}#mermaid-1787798101994 .edgeLabel rect\{opacity:0.5;background-color:#e8e8e8;fill:#e8e8e8;\}#mermaid-1787798101994 .labelBkg\{background-color:rgba(232, 232, 232, 0.5);\}#mermaid-1787798101994 .cluster rect\{fill:#ffffde;stroke:#aaaa33;stroke-width:1px;\}#mermaid-1787798101994 .cluster text\{fill:#333;\}#mermaid-1787798101994 .cluster span,#mermaid-1787798101994 p\{color:#333;\}#mermaid-1787798101994 div.mermaidTooltip\{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:12px;background:hsl(80, 100%, 96.2745098039%);border:1px solid #aaaa33;border-radius:2px;pointer-events:none;z-index:100;\}#mermaid-1787798101994 .flowchartTitleText\{text-anchor:middle;font-size:18px;fill:#333;\}#mermaid-1787798101994 :root\{--mermaid-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;\}
-\f0 \cf4 \
+\f2\fs26 \cf0 using System;\
+using System.Diagnostics;\
+using System.IO;\
+using System.Net.Http;\
+using System.Text;\
+using System.Threading.Tasks;\
+using Newtonsoft.Json;\
 \
-\
-\
-\
-Custom Page UI\
-Folder + Field + Prompt\
-Code-Behind / WebAPI\
-Relativity ObjectManager\
-Fetch Docs / Extracted Text\
-Anthropic Claude API\
-Messages Endpoint\
-Relativity ObjectManager\
-Update Documents / Display Results\
-\pard\pardeftab720\qc\partightenfactor0
-
-\fs24 \cf5 \uc0\u9654 \
-View\
-Source\
-\
-\
-\
-\pard\pardeftab720\partightenfactor0
-
-\fs28 \cf3 \
-\pard\pardeftab720\sa320\partightenfactor0
-
-\f1\b\fs35 \cf2 1. The ASPX Markup (
-\f0\b0 \cb6 Default.aspx
-\f1\b \cb1 )\
-\pard\pardeftab720\sa280\partightenfactor0
-
-\f0\b0\fs28 \cf2 Add controls to collect the inputs (Folder, Field to analyze/update, and custom User Prompt/Instructions), plus a button and status/result container:\
-\pard\pardeftab720\partightenfactor0
-
-\f3 \cf2 \cb6 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Hurray2.Default" Async="true" %>\
-\
-\pard\pardeftab720\partightenfactor0
-\cf7 <!DOCTYPE \cf8 html\cf7 >\cf2 \
-<\cf9 html\cf2  \cf7 xmlns\cf2 =\cf10 "http://www.w3.org/1999/xhtml"\cf2 >\
-<\cf9 head\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2 >\
-    <\cf9 title\cf2 >Relativity Claude Assistant</\cf9 title\cf2 >\
-    <\cf9 style\cf2 >\
-        \cf7 .form-group\cf2  \{ \cf7 margin-bottom\cf2 : \cf7 15px\cf2 ; \cf7 font-family\cf2 : Arial, sans-serif; \}\
-        \cf7 .form-group\cf2  \cf9 label\cf2  \{ \cf7 display\cf2 : block; \cf7 font-weight\cf2 : bold; \cf7 margin-bottom\cf2 : \cf7 5px\cf2 ; \}\
-        \cf7 .form-control\cf2  \{ \cf7 width\cf2 : \cf7 400px\cf2 ; \cf7 padding\cf2 : \cf7 6px\cf2 ; \}\
-        \cf7 .btn-primary\cf2  \{ \cf7 background-color\cf2 : \cf7 #007acc\cf2 ; \cf7 color\cf2 : white; \cf7 padding\cf2 : \cf7 8px\cf2  \cf7 16px\cf2 ; \cf7 border\cf2 : none; \cf7 cursor\cf2 : pointer; \cf7 border-radius\cf2 : \cf7 4px\cf2 ; \}\
-        \cf7 .btn-primary\cf9 :disabled\cf2  \{ \cf7 background-color\cf2 : \cf7 #cccccc\cf2 ; \}\
-        \cf7 .output-box\cf2  \{ \cf7 margin-top\cf2 : \cf7 20px\cf2 ; \cf7 padding\cf2 : \cf7 10px\cf2 ; \cf7 border\cf2 : \cf7 1px\cf2  solid \cf7 #ddd\cf2 ; \cf7 background-color\cf2 : \cf7 #f9f9f9\cf2 ; \cf7 width\cf2 : \cf7 600px\cf2 ; \cf7 white-space\cf2 : pre-wrap; \cf7 font-family\cf2 : monospace; \}\
-    </\cf9 style\cf2 >\
-</\cf9 head\cf2 >\
-<\cf9 body\cf2 >\
-    <\cf9 form\cf2  \cf7 id\cf2 =\cf10 "form1"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2 >\
-        <\cf9 h2\cf2 >Process Documents with Claude</\cf9 h2\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 asp:Label\cf2  \cf7 ID\cf2 =\cf10 "DisplayLabel"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 ForeColor\cf2 =\cf10 "#007acc"\cf2  \cf7 Font-Bold\cf2 =\cf10 "true"\cf2 ></\cf9 asp:Label\cf2 >\
-        </\cf9 div\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 label\cf2  \cf7 for\cf2 =\cf10 "ddlDynamicOptions"\cf2 >1. Select Folder:</\cf9 label\cf2 >\
-            <\cf9 asp:DropDownList\cf2  \cf7 ID\cf2 =\cf10 "ddlDynamicOptions"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 CssClass\cf2 =\cf10 "form-control"\cf2 ></\cf9 asp:DropDownList\cf2 >\
-        </\cf9 div\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 label\cf2  \cf7 for\cf2 =\cf10 "ddlFields"\cf2 >2. Select Target PRIV Field:</\cf9 label\cf2 >\
-            <\cf9 asp:DropDownList\cf2  \cf7 ID\cf2 =\cf10 "ddlFields"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 CssClass\cf2 =\cf10 "form-control"\cf2 ></\cf9 asp:DropDownList\cf2 >\
-        </\cf9 div\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 label\cf2  \cf7 for\cf2 =\cf10 "txtUserPrompt"\cf2 >3. Instructions / Prompt for Claude:</\cf9 label\cf2 >\
-            <\cf9 asp:TextBox\cf2  \cf7 ID\cf2 =\cf10 "txtUserPrompt"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 TextMode\cf2 =\cf10 "MultiLine"\cf2  \cf7 Rows\cf2 =\cf10 "4"\cf2  \cf7 CssClass\cf2 =\cf10 "form-control"\cf2  \
-                \cf7 Text\cf2 =\cf10 "Analyze the document text and determine if it contains privileged legal communications (Attorney-Client or Work-Product). State your reasoning and confidence level."\cf2 ></\cf9 asp:TextBox\cf2 >\
-        </\cf9 div\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 asp:Button\cf2  \cf7 ID\cf2 =\cf10 "btnRunClaude"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 Text\cf2 =\cf10 "Execute Claude Analysis"\cf2  \cf7 CssClass\cf2 =\cf10 "btn-primary"\cf2  \cf7 OnClick\cf2 =\cf10 "btnRunClaude_Click"\cf2  />\
-        </\cf9 div\cf2 >\
-\
-        <\cf9 div\cf2  \cf7 class\cf2 =\cf10 "form-group"\cf2 >\
-            <\cf9 label\cf2 >Output Status:</\cf9 label\cf2 >\
-            <\cf9 asp:Label\cf2  \cf7 ID\cf2 =\cf10 "lblStatus"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 Font-Bold\cf2 =\cf10 "true"\cf2 ></\cf9 asp:Label\cf2 >\
-            <\cf9 div\cf2  \cf7 id\cf2 =\cf10 "divOutput"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2  \cf7 class\cf2 =\cf10 "output-box"\cf2  \cf7 visible\cf2 =\cf10 "false"\cf2 >\
-                <\cf9 asp:Literal\cf2  \cf7 ID\cf2 =\cf10 "litClaudeResponse"\cf2  \cf7 runat\cf2 =\cf10 "server"\cf2 ></\cf9 asp:Literal\cf2 >\
-            </\cf9 div\cf2 >\
-        </\cf9 div\cf2 >\
-    </\cf9 form\cf2 >\
-</\cf9 body\cf2 >\
-</\cf9 html\cf2 >\
-\pard\pardeftab720\qc\partightenfactor0
-
-\f0\fs32 \cf2 \cb11 \
-\pard\pardeftab720\partightenfactor0
-
-\fs28 \cf3 \cb1 \
-\pard\pardeftab720\sa320\partightenfactor0
-
-\f1\b\fs35 \cf2 2. Claude API DTO Classes (C#)\
-\pard\pardeftab720\partightenfactor0
-
-\f3\b0\fs28 \cf8 \cb6 using\cf2  System.Collections.Generic;\
-\cf8 using\cf2  Newtonsoft.Json;\
-\
-\cf8 public\cf2  \cf8 class\cf2  \cf12 ClaudeRequest\cf2 \
+namespace Hurray2\
 \{\
-    [\cf7 JsonProperty(\cf10 "model"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 string\cf2  Model \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \} = \cf10 "claude-3-5-sonnet-20241022"\cf2 ;\
-\
-    [\cf7 JsonProperty(\cf10 "max_tokens"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 int\cf2  MaxTokens \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \} = \cf7 1024\cf2 ;\
-\
-    [\cf7 JsonProperty(\cf10 "messages"\cf7 )\cf2 ]\
-    \cf8 public\cf2  List<ClaudeMessage> Messages \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \} = \cf8 new\cf2  List<ClaudeMessage>();\
-\}\
-\
-\cf8 public\cf2  \cf8 class\cf2  \cf12 ClaudeMessage\cf2 \
-\{\
-    [\cf7 JsonProperty(\cf10 "role"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 string\cf2  Role \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \}\
-\
-    [\cf7 JsonProperty(\cf10 "content"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 string\cf2  Content \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \}\
-\}\
-\
-\cf8 public\cf2  \cf8 class\cf2  \cf12 ClaudeResponse\cf2 \
-\{\
-    [\cf7 JsonProperty(\cf10 "content"\cf7 )\cf2 ]\
-    \cf8 public\cf2  List<ClaudeContentBlock> Content \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \}\
-\}\
-\
-\cf8 public\cf2  \cf8 class\cf2  \cf12 ClaudeContentBlock\cf2 \
-\{\
-    [\cf7 JsonProperty(\cf10 "type"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 string\cf2  Type \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \}\
-\
-    [\cf7 JsonProperty(\cf10 "text"\cf7 )\cf2 ]\
-    \cf8 public\cf2  \cf13 string\cf2  Text \{ \cf8 get\cf2 ; \cf8 set\cf2 ; \}\
-\}\
-\pard\pardeftab720\qc\partightenfactor0
-
-\f0\fs32 \cf2 \cb11 \
-\pard\pardeftab720\partightenfactor0
-
-\fs28 \cf3 \cb1 \
-\pard\pardeftab720\sa320\partightenfactor0
-
-\f1\b\fs35 \cf2 3. Claude API Client Helper\
-\pard\pardeftab720\partightenfactor0
-
-\f3\b0\fs28 \cf8 \cb6 using\cf2  System;\
-\cf8 using\cf2  System.Net.Http;\
-\cf8 using\cf2  System.Text;\
-\cf8 using\cf2  System.Threading.Tasks;\
-\cf8 using\cf2  Newtonsoft.Json;\
-\
-\cf8 public\cf2  \cf8 class\cf2  \cf12 ClaudeApiClient\cf2 \
-\{\
-    \cf8 private\cf2  \cf8 static\cf2  \cf8 readonly\cf2  HttpClient _httpClient = \cf8 new\cf2  HttpClient();\
-    \cf8 private\cf2  \cf8 readonly\cf2  \cf13 string\cf2  _apiKey;\
-\
-    \cf8 public\cf2  \cf12 ClaudeApiClient\cf2 (\cf13 string\cf2  apiKey)\
+    public class FloodgateClient\
     \{\
-        _apiKey = apiKey ?? \cf8 throw\cf2  \cf8 new\cf2  ArgumentNullException(\cf8 nameof\cf2 (apiKey));\
-    \}\
+        private static readonly HttpClient _httpClient = new HttpClient();\
+        private const string FloodgateUrl = "https://floodgate.g.apple.com/api/anthropic/v1/messages";\
+        private const string ClientId = "hvys3fcwcteqrvw3qzkvtk86viuoqv";\
+        private const string Scopes = "openid,dsid,accountname,email,groups";\
 \
-    \cf8 public\cf2  \cf8 async\cf2  Task<\cf13 string\cf2 > \cf12 CallClaudeAsync\cf2 (\cf13 string\cf2  userPrompt, \cf13 string\cf2  documentText)\
-    \{\
-        \cf8 var\cf2  requestPayload = \cf8 new\cf2  ClaudeRequest\
+        // Cached token & expiration handling\
+        private static string _cachedToken;\
+        private static DateTime _tokenExpiration = DateTime.MinValue;\
+\
+        /// <summary>\
+        /// Executes `appleconnect` to retrieve the OIDC id-token.\
+        /// </summary>\
+        public static string GetAppleConnectToken()\
         \{\
-            Model = \cf10 "claude-3-5-sonnet-20241022"\cf2 ,\
-            MaxTokens = \cf7 1000\cf2 ,\
-            Messages = \cf8 new\cf2  List<ClaudeMessage>\
+            // Return cached token if still valid (tokens are typically valid ~1 hour)\
+            if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiration)\
             \{\
-                \cf8 new\cf2  ClaudeMessage\
+                return _cachedToken;\
+            \}\
+\
+            // Look for appleconnect binary in standard macOS paths\
+            string appleconnectPath = "/usr/local/bin/appleconnect";\
+            if (!File.Exists(appleconnectPath))\
+            \{\
+                appleconnectPath = "/opt/homebrew/bin/appleconnect";\
+            \}\
+\
+            var startInfo = new ProcessStartInfo\
+            \{\
+                FileName = appleconnectPath,\
+                Arguments = $"getToken -t oauth -G pkce -C \{ClientId\} -o \{Scopes\} --interactivity-type none",\
+                RedirectStandardOutput = true,\
+                RedirectStandardError = true,\
+                UseShellExecute = false,\
+                CreateNoWindow = true\
+            \};\
+\
+            using (var process = Process.Start(startInfo))\
+            \{\
+                if (process == null)\
+                    throw new Exception("Failed to launch appleconnect process.");\
+\
+                string output = process.StandardOutput.ReadToEnd();\
+                string error = process.StandardError.ReadToEnd();\
+                process.WaitForExit();\
+\
+                if (process.ExitCode != 0)\
                 \{\
-                    Role = \cf10 "user"\cf2 ,\
-                    Content = \cf10 $"\cf14 \{userPrompt\}\cf10 \\n\\n--- DOCUMENT TEXT ---\\n\cf14 \{documentText\}\cf10 "\cf2 \
+                    throw new Exception($"appleconnect failed (exit code \{process.ExitCode\}): \{error\}");\
                 \}\
-            \}\
-        \};\
 \
-        \cf8 var\cf2  requestMessage = \cf8 new\cf2  HttpRequestMessage(HttpMethod.Post, \cf10 "https://api.anthropic.com/v1/messages"\cf2 )\
-        \{\
-            Content = \cf8 new\cf2  StringContent(JsonConvert.SerializeObject(requestPayload), Encoding.UTF8, \cf10 "application/json"\cf2 )\
-        \};\
-\
-        requestMessage.Headers.Add(\cf10 "x-api-key"\cf2 , _apiKey);\
-        requestMessage.Headers.Add(\cf10 "anthropic-version"\cf2 , \cf10 "2023-06-01"\cf2 );\
-\
-        HttpResponseMessage response = \cf8 await\cf2  _httpClient.SendAsync(requestMessage);\
-        \cf13 string\cf2  responseBody = \cf8 await\cf2  response.Content.ReadAsStringAsync();\
-\
-        \cf8 if\cf2  (!response.IsSuccessStatusCode)\
-        \{\
-            \cf8 throw\cf2  \cf8 new\cf2  Exception(\cf10 $"Claude API error (\cf14 \{response.StatusCode\}\cf10 ): \cf14 \{responseBody\}\cf10 "\cf2 );\
-        \}\
-\
-        \cf8 var\cf2  result = JsonConvert.DeserializeObject<ClaudeResponse>(responseBody);\
-        \cf8 return\cf2  result?.Content?[\cf7 0\cf2 ]?.Text ?? \cf13 string\cf2 .Empty;\
-    \}\
-\}\
-\pard\pardeftab720\qc\partightenfactor0
-
-\f0\fs32 \cf2 \cb11 \
-\pard\pardeftab720\partightenfactor0
-
-\fs28 \cf3 \cb1 \
-\pard\pardeftab720\sa320\partightenfactor0
-
-\f1\b\fs35 \cf2 4. Code-Behind (
-\f0\b0 \cb6 Default.aspx.cs
-\f1\b \cb1 ) with Execution Handler\
-\pard\pardeftab720\partightenfactor0
-
-\f3\b0\fs28 \cf8 \cb6 using\cf2  System;\
-\cf8 using\cf2  System.Collections.Generic;\
-\cf8 using\cf2  System.Linq;\
-\cf8 using\cf2  System.Threading.Tasks;\
-\cf8 using\cf2  System.Web.UI;\
-\cf8 using\cf2  System.Web.UI.WebControls;\
-\cf8 using\cf2  Relativity.API;\
-\cf8 using\cf2  Relativity.CustomPages;\
-\cf8 using\cf2  Relativity.Services.Folder;\
-\cf8 using\cf2  Relativity.Services.Objects;\
-\cf8 using\cf2  Relativity.Services.Objects.DataContracts;\
-\
-\cf8 namespace\cf2  \cf12 Hurray2\cf2 \
-\{\
-    \cf8 public\cf2  \cf8 partial\cf2  \cf8 class\cf2  \cf12 Default\cf2  : \cf12 Page\cf2 \
-    \{\
-        \cf8 private\cf2  \cf13 int\cf2  WorkspaceArtifactId => ConnectionHelper.Helper().GetActiveCaseID();\
-        \
-        \cf15 // Store your Anthropic API key securely (e.g. Secret Store or Instance Setting)\cf2 \
-        \cf8 private\cf2  \cf8 const\cf2  \cf13 string\cf2  ClaudeApiKey = \cf10 "YOUR_ANTHROPIC_API_KEY"\cf2 ;\
-\
-        \cf8 protected\cf2  \cf8 void\cf2  \cf12 Page_Load\cf2 (\cf13 object\cf2  sender, EventArgs e)\
-        \{\
-            \cf8 if\cf2  (!IsPostBack)\
-            \{\
-                DisplayLabel.Text = \cf10 $"Active Workspace ID: \cf14 \{WorkspaceArtifactId\}\cf10 "\cf2 ;\
-                RegisterAsyncTask(\cf8 new\cf2  PageAsyncTask(PopulateDropdownsAsync));\
-            \}\
-        \}\
-\
-        \cf8 private\cf2  \cf8 async\cf2  Task \cf12 PopulateDropdownsAsync\cf2 ()\
-        \{\
-            \cf8 await\cf2  PopulateFolderDropdownAsync();\
-            \cf8 await\cf2  PopulatePrivFieldsDropdownAsync();\
-        \}\
-\
-        \cf7 #\cf8 region\cf7  Populate Dropdowns\cf2 \
-\
-        \cf8 private\cf2  \cf8 async\cf2  Task \cf12 PopulateFolderDropdownAsync\cf2 ()\
-        \{\
-            ddlDynamicOptions.Items.Clear();\
-            ddlDynamicOptions.Items.Add(\cf8 new\cf2  ListItem(\cf10 "-- Select a Folder --"\cf2 , \cf10 ""\cf2 ));\
-\
-            IServicesMgr servicesMgr = ConnectionHelper.Helper().GetServicesManager();\
-            \cf8 using\cf2  (IFolderManager folderManager = servicesMgr.CreateProxy<IFolderManager>(ExecutionIdentity.CurrentUser))\
-            \{\
-                List<Folder> rootFolders = \cf8 await\cf2  folderManager.GetFolderTreeAsync(WorkspaceArtifactId, \cf8 new\cf2  List<\cf13 int\cf2 >());\
-                \cf8 if\cf2  (rootFolders != \cf7 null\cf2 )\
+                // Parse the output looking for "id-token <token_value>"\
+                using (var reader = new StringReader(output))\
                 \{\
-                    \cf8 foreach\cf2  (Folder rootFolder \cf8 in\cf2  rootFolders)\
+                    string line;\
+                    while ((line = reader.ReadLine()) != null)\
                     \{\
-                        AddFolderToDropDownList(rootFolder, level: \cf7 0\cf2 );\
-                    \}\
-                \}\
-            \}\
-        \}\
-\
-        \cf8 private\cf2  \cf8 void\cf2  \cf12 AddFolderToDropDownList\cf2 (Folder currentFolder, \cf13 int\cf2  level)\
-        \{\
-            \cf13 string\cf2  indent = level == \cf7 0\cf2  ? \cf13 string\cf2 .Empty : \cf8 new\cf2  \cf13 string\cf2 (\cf10 '\\u00A0'\cf2 , level * \cf7 4\cf2 ) + \cf10 "\uc0\u9492 \u9472  "\cf2 ;\
-            ddlDynamicOptions.Items.Add(\cf8 new\cf2  ListItem(\cf10 $"\cf14 \{indent\}\{currentFolder.Name\}\cf10 "\cf2 , currentFolder.ArtifactID.ToString()));\
-\
-            \cf8 if\cf2  (currentFolder.Children != \cf7 null\cf2 )\
-            \{\
-                \cf8 foreach\cf2  (Folder child \cf8 in\cf2  currentFolder.Children)\
-                \{\
-                    AddFolderToDropDownList(child, level + \cf7 1\cf2 );\
-                \}\
-            \}\
-        \}\
-\
-        \cf8 private\cf2  \cf8 async\cf2  Task \cf12 PopulatePrivFieldsDropdownAsync\cf2 ()\
-        \{\
-            ddlFields.Items.Clear();\
-            ddlFields.Items.Add(\cf8 new\cf2  ListItem(\cf10 "-- Select a PRIV Field --"\cf2 , \cf10 ""\cf2 ));\
-\
-            IServicesMgr servicesMgr = ConnectionHelper.Helper().GetServicesManager();\
-            \cf8 using\cf2  (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
-            \{\
-                \cf8 var\cf2  queryRequest = \cf8 new\cf2  QueryRequest\
-                \{\
-                    ObjectType = \cf8 new\cf2  ObjectTypeRef \{ ArtifactTypeID = \cf7 14\cf2  \},\
-                    Condition = \cf10 "'Object Type Artifact Type ID' == 10 AND 'Name' LIKE 'PRIV'"\cf2 ,\
-                    Fields = \cf8 new\cf2  List<FieldRef> \{ \cf8 new\cf2  FieldRef \{ Name = \cf10 "Name"\cf2  \} \},\
-                    Sorts = \cf8 new\cf2  List<Sort> \{ \cf8 new\cf2  Sort \{ Direction = SortEnum.Ascending, FieldIdentifier = \cf8 new\cf2  FieldRef \{ Name = \cf10 "Name"\cf2  \} \} \}\
-                \};\
-\
-                QueryResult result = \cf8 await\cf2  objectManager.QueryAsync(WorkspaceArtifactId, queryRequest, \cf7 1\cf2 , \cf7 1000\cf2 );\
-                \cf8 if\cf2  (result?.Objects != \cf7 null\cf2 )\
-                \{\
-                    \cf8 foreach\cf2  (RelativityObject fieldObj \cf8 in\cf2  result.Objects)\
-                    \{\
-                        \cf13 string\cf2  fieldName = fieldObj.FieldValues?.Find(f => f.Field.Name == \cf10 "Name"\cf2 )?.Value?.ToString() ?? fieldObj.Name;\
-                        ddlFields.Items.Add(\cf8 new\cf2  ListItem(fieldName, fieldObj.ArtifactID.ToString()));\
-                    \}\
-                \}\
-            \}\
-        \}\
-\
-        \cf7 #\cf8 endregion\cf2 \
-\
-        \cf7 #\cf8 region\cf7  Run Claude Button Handler\cf2 \
-\
-        \cf8 protected\cf2  \cf8 void\cf2  \cf12 btnRunClaude_Click\cf2 (\cf13 object\cf2  sender, EventArgs e)\
-        \{\
-            RegisterAsyncTask(\cf8 new\cf2  PageAsyncTask(ExecuteClaudeWorkflowAsync));\
-        \}\
-\
-        \cf8 private\cf2  \cf8 async\cf2  Task \cf12 ExecuteClaudeWorkflowAsync\cf2 ()\
-        \{\
-            \cf8 if\cf2  (\cf13 string\cf2 .IsNullOrEmpty(ddlDynamicOptions.SelectedValue) || \cf13 string\cf2 .IsNullOrEmpty(ddlFields.SelectedValue))\
-            \{\
-                lblStatus.Text = \cf10 "Please select both a Folder and a Target Field."\cf2 ;\
-                lblStatus.ForeColor = System.Drawing.Color.Red;\
-                \cf8 return\cf2 ;\
-            \}\
-\
-            \cf13 int\cf2  selectedFolderId = \cf13 int\cf2 .Parse(ddlDynamicOptions.SelectedValue);\
-            \cf13 int\cf2  selectedFieldArtifactId = \cf13 int\cf2 .Parse(ddlFields.SelectedValue);\
-            \cf13 string\cf2  targetFieldName = ddlFields.SelectedItem.Text;\
-            \cf13 string\cf2  userPrompt = txtUserPrompt.Text;\
-\
-            lblStatus.Text = \cf10 "Querying documents and invoking Claude..."\cf2 ;\
-            lblStatus.ForeColor = System.Drawing.Color.Blue;\
-\
-            IServicesMgr servicesMgr = ConnectionHelper.Helper().GetServicesManager();\
-            \cf8 using\cf2  (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
-            \{\
-                \cf15 // 1. Query documents in the selected folder (sample top 5 docs for example)\cf2 \
-                \cf8 var\cf2  docQuery = \cf8 new\cf2  QueryRequest\
-                \{\
-                    ObjectType = \cf8 new\cf2  ObjectTypeRef \{ ArtifactTypeID = \cf7 10\cf2  \}, \cf15 // 10 = Document\cf2 \
-                    Condition = \cf10 $"'Folder' == OBJECT \cf14 \{selectedFolderId\}\cf10 "\cf2 ,\
-                    Fields = \cf8 new\cf2  List<FieldRef>\
-                    \{\
-                        \cf8 new\cf2  FieldRef \{ Name = \cf10 "Control Number"\cf2  \},\
-                        \cf8 new\cf2  FieldRef \{ Name = \cf10 "Extracted Text"\cf2  \}\
-                    \}\
-                \};\
-\
-                QueryResult docResults = \cf8 await\cf2  objectManager.QueryAsync(WorkspaceArtifactId, docQuery, \cf7 1\cf2 , \cf7 5\cf2 );\
-\
-                \cf8 if\cf2  (docResults == \cf7 null\cf2  || !docResults.Objects.Any())\
-                \{\
-                    lblStatus.Text = \cf10 "No documents found in the selected folder."\cf2 ;\
-                    lblStatus.ForeColor = System.Drawing.Color.Orange;\
-                    \cf8 return\cf2 ;\
-                \}\
-\
-                \cf8 var\cf2  claude = \cf8 new\cf2  ClaudeApiClient(ClaudeApiKey);\
-                \cf8 var\cf2  logs = \cf8 new\cf2  StringBuilder();\
-\
-                \cf15 // 2. Loop documents, send to Claude, and update the chosen field\cf2 \
-                \cf8 foreach\cf2  (RelativityObject doc \cf8 in\cf2  docResults.Objects)\
-                \{\
-                    \cf13 string\cf2  controlNum = doc.FieldValues.Find(f => f.Field.Name == \cf10 "Control Number"\cf2 )?.Value?.ToString() ?? doc.ArtifactID.ToString();\
-                    \cf13 string\cf2  extractedText = doc.FieldValues.Find(f => f.Field.Name == \cf10 "Extracted Text"\cf2 )?.Value?.ToString() ?? \cf13 string\cf2 .Empty;\
-\
-                    \cf15 // Truncate text if large to fit token limits\cf2 \
-                    \cf8 if\cf2  (extractedText.Length > \cf7 8000\cf2 ) extractedText = extractedText.Substring(\cf7 0\cf2 , \cf7 8000\cf2 ) + \cf10 "... [truncated]"\cf2 ;\
-\
-                    \cf15 // 3. Call Claude\cf2 \
-                    \cf13 string\cf2  response = \cf8 await\cf2  claude.CallClaudeAsync(userPrompt, extractedText);\
-                    logs.AppendLine(\cf10 $"[\cf14 \{controlNum\}\cf10 ] -> Claude Result: \cf14 \{response\}\cf10 \\n"\cf2 );\
-\
-                    \cf15 // 4. Update the selected field on the document\cf2 \
-                    \cf8 var\cf2  updateRequest = \cf8 new\cf2  UpdateRequest\
-                    \{\
-                        Object = \cf8 new\cf2  RelativityObjectRef \{ ArtifactID = doc.ArtifactID \},\
-                        FieldValues = \cf8 new\cf2  List<FieldRefValuePair>\
+                        if (line.StartsWith("id-token"))\
                         \{\
-                            \cf8 new\cf2  FieldRefValuePair\
+                            string[] parts = line.Split(new[] \{ ' ' \}, StringSplitOptions.RemoveEmptyEntries);\
+                            if (parts.Length >= 2)\
                             \{\
-                                Field = \cf8 new\cf2  FieldRef \{ ArtifactID = selectedFieldArtifactId \},\
-                                Value = response\
+                                _cachedToken = parts[1].Trim();\
+                                _tokenExpiration = DateTime.UtcNow.AddMinutes(45); // Cache for 45 mins\
+                                return _cachedToken;\
                             \}\
                         \}\
-                    \};\
-\
-                    \cf8 await\cf2  objectManager.UpdateAsync(WorkspaceArtifactId, updateRequest);\
+                    \}\
                 \}\
 \
-                lblStatus.Text = \cf10 $"Successfully processed \cf14 \{docResults.Objects.Count\}\cf10  document(s)."\cf2 ;\
-                lblStatus.ForeColor = System.Drawing.Color.Green;\
-                litClaudeResponse.Text = logs.ToString();\
-                divOutput.Visible = \cf7 true\cf2 ;\
+                throw new Exception($"Could not extract id-token from appleconnect output:\\n\{output\}");\
             \}\
         \}\
 \
-        \cf7 #\cf8 endregion\cf2 \
+        /// <summary>\
+        /// Sends prompt and document text to Floodgate using the Anthropic Messages API format.\
+        /// </summary>\
+        public async Task<string> CallClaudeAsync(string userPrompt, string documentText, string model = "anthropic.claude-sonnet-4-6")\
+        \{\
+            string token = GetAppleConnectToken();\
+\
+            var requestPayload = new ClaudeRequest\
+            \{\
+                Model = model,\
+                MaxTokens = 1024,\
+                Messages = new System.Collections.Generic.List<ClaudeMessage>\
+                \{\
+                    new ClaudeMessage\
+                    \{\
+                        Role = "user",\
+                        Content = $"\{userPrompt\}\\n\\n--- DOCUMENT TEXT ---\\n\{documentText\}"\
+                    \}\
+                \}\
+            \};\
+\
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, FloodgateUrl)\
+            \{\
+                Content = new StringContent(JsonConvert.SerializeObject(requestPayload), Encoding.UTF8, "application/json")\
+            \};\
+\
+            // Floodgate authentication headers\
+            requestMessage.Headers.Add("Authorization", $"Bearer \{token\}");\
+            requestMessage.Headers.Add("User-Agent", "HurrayCustomPage/1.0");\
+\
+            HttpResponseMessage response = await _httpClient.SendAsync(requestMessage);\
+            string responseBody = await response.Content.ReadAsStringAsync();\
+\
+            if (!response.IsSuccessStatusCode)\
+            \{\
+                // Invalidate cached token if 401 Unauthorized\
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)\
+                \{\
+                    _cachedToken = null;\
+                \}\
+                throw new Exception($"Floodgate API error (\{response.StatusCode\}): \{responseBody\}");\
+            \}\
+\
+            var result = JsonConvert.DeserializeObject<ClaudeResponse>(responseBody);\
+            return result?.Content?[0]?.Text ?? string.Empty;\
+        \}\
     \}\
-\}}
+\}\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 2. Request / Response DTOs (ClaudeModels.cs)\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b0\fs26 \cf0 using System.Collections.Generic;\
+using Newtonsoft.Json;\
+\
+namespace Hurray2\
+\{\
+    public class ClaudeRequest\
+    \{\
+        [JsonProperty("model")]\
+        public string Model \{ get; set; \} = "anthropic.claude-sonnet-4-6";\
+\
+        [JsonProperty("max_tokens")]\
+        public int MaxTokens \{ get; set; \} = 1024;\
+\
+        [JsonProperty("messages")]\
+        public List<ClaudeMessage> Messages \{ get; set; \} = new List<ClaudeMessage>();\
+    \}\
+\
+    public class ClaudeMessage\
+    \{\
+        [JsonProperty("role")]\
+        public string Role \{ get; set; \}\
+\
+        [JsonProperty("content")]\
+        public string Content \{ get; set; \}\
+    \}\
+\
+    public class ClaudeResponse\
+    \{\
+        [JsonProperty("content")]\
+        public List<ClaudeContentBlock> Content \{ get; set; \}\
+    \}\
+\
+    public class ClaudeContentBlock\
+    \{\
+        [JsonProperty("type")]\
+        public string Type \{ get; set; \}\
+\
+        [JsonProperty("text")]\
+        public string Text \{ get; set; \}\
+    \}\
+\}\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 3. Updated Button Execution in Default.aspx.cs\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 In your ExecuteClaudeWorkflowAsync method, swap out the old client for FloodgateClient:\
+\pard\pardeftab720\partightenfactor0
+
+\f2\fs26 \cf0 // Instantiate the Floodgate client (no API key needed)\
+var floodgateClient = new FloodgateClient();\
+\
+foreach (RelativityObject doc in docResults.Objects)\
+\{\
+    string controlNum = doc.FieldValues.Find(f => f.Field.Name == "Control Number")?.Value?.ToString() ?? doc.ArtifactID.ToString();\
+    string extractedText = doc.FieldValues.Find(f => f.Field.Name == "Extracted Text")?.Value?.ToString() ?? string.Empty;\
+\
+    if (extractedText.Length > 8000) extractedText = extractedText.Substring(0, 8000) + "... [truncated]";\
+\
+    // Call Floodgate using AppleConnect token\
+    string response = await floodgateClient.CallClaudeAsync(userPrompt, extractedText);\
+    logs.AppendLine($"[\{controlNum\}] -> Privilege Analysis: \{response\}\\n");\
+\
+    // Update the selected Relativity field\
+    var updateRequest = new UpdateRequest\
+    \{\
+        Object = new RelativityObjectRef \{ ArtifactID = doc.ArtifactID \},\
+        FieldValues = new List<FieldRefValuePair>\
+        \{\
+            new FieldRefValuePair\
+            \{\
+                Field = new FieldRef \{ ArtifactID = selectedFieldArtifactId \},\
+                Value = response\
+            \}\
+        \}\
+    \};\
+\
+    await objectManager.UpdateAsync(WorkspaceArtifactId, updateRequest);\
+\}\
+}
