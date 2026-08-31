@@ -1,78 +1,13 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\froman\fcharset0 Times-Bold;\f2\fmodern\fcharset0 Courier;
-}
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 \margl1440\margr1440\vieww29700\viewh15480\viewkind0
 \deftab720
-\pard\pardeftab720\sa240\partightenfactor0
-
-\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 I get a bunch of errors in Visual Studio \'91JsonPropertyAttribute\'92
-\f1\b\fs28 \strokec2 1. Default.aspx\
 \pard\pardeftab720\partightenfactor0
 
-\f2\b0\fs26 \cf0 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Hurray2.Default" Async="true" %>\
-\
-<!DOCTYPE html>\
-\
-<html xmlns="http://www.w3.org/1999/xhtml">\
-<head runat="server">\
-    <title>Hurray Privilege Analysis</title>\
-    <style>\
-        body \{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; \}\
-        .form-group \{ margin-bottom: 16px; \}\
-        .form-group label \{ display: block; font-weight: bold; margin-bottom: 6px; \}\
-        .form-control \{ width: 500px; padding: 6px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; \}\
-        .btn-primary \{ background-color: #0071e3; color: white; padding: 8px 18px; border: none; font-size: 14px; border-radius: 6px; cursor: pointer; \}\
-        .btn-primary:hover \{ background-color: #0077ed; \}\
-        .output-box \{ margin-top: 20px; padding: 12px; border: 1px solid #d2d2d7; background-color: #f5f5f7; width: 650px; white-space: pre-wrap; font-family: Menlo, Monaco, Consolas, monospace; font-size: 13px; border-radius: 6px; \}\
-    </style>\
-</head>\
-<body>\
-    <form id="form1" runat="server">\
-        <h2>Hurray - Document Privilege Analysis</h2>\
-        \
-        <div class="form-group">\
-            <asp:Label ID="DisplayLabel" runat="server" ForeColor="#0071e3" Font-Bold="true"></asp:Label>\
-        </div>\
-\
-        <div class="form-group">\
-            <label for="ddlDynamicOptions">1. Select Folder:</label>\
-            <asp:DropDownList ID="ddlDynamicOptions" runat="server" CssClass="form-control"></asp:DropDownList>\
-        </div>\
-\
-        <div class="form-group">\
-            <label for="ddlFields">2. Select Target PRIV Field:</label>\
-            <asp:DropDownList ID="ddlFields" runat="server" CssClass="form-control"></asp:DropDownList>\
-        </div>\
-\
-        <div class="form-group">\
-            <label for="txtUserPrompt">3. Instructions / Prompt for Claude:</label>\
-            <asp:TextBox ID="txtUserPrompt" runat="server" TextMode="MultiLine" Rows="4" CssClass="form-control" \
-                Text="Analyze the document text and determine if it contains privileged legal communications (Attorney-Client or Work-Product). State your reasoning and confidence level."></asp:TextBox>\
-        </div>\
-\
-        <div class="form-group">\
-            <asp:Button ID="btnRunClaude" runat="server" Text="Execute Claude Analysis" CssClass="btn-primary" OnClick="btnRunClaude_Click" />\
-        </div>\
-\
-        <div class="form-group">\
-            <label>Output Status:</label>\
-            <asp:Label ID="lblStatus" runat="server" Font-Bold="true"></asp:Label>\
-            <div id="divOutput" runat="server" class="output-box" visible="false">\
-                <asp:Literal ID="litClaudeResponse" runat="server"></asp:Literal>\
-            </div>\
-        </div>\
-    </form>\
-</body>\
-</html>\
-\pard\pardeftab720\sa280\partightenfactor0
-
-\f1\b\fs28 \cf0 2. Default.aspx.cs\
-\pard\pardeftab720\partightenfactor0
-
-\f2\b0\fs26 \cf0 using System;\
+\f0\fs26 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 using System;\
 using System.Collections.Generic;\
 using System.Diagnostics;\
 using System.IO;\
@@ -80,9 +15,9 @@ using System.Linq;\
 using System.Net;\
 using System.Text;\
 using System.Threading.Tasks;\
+using System.Web.Script.Serialization;\
 using System.Web.UI;\
 using System.Web.UI.WebControls;\
-using Newtonsoft.Json;\
 using Relativity.API;\
 using Relativity.CustomPages;\
 using Relativity.Services.Folder;\
@@ -135,7 +70,6 @@ namespace Hurray2\
 \
         private void AddFolderToDropDownList(Folder currentFolder, int level)\
         \{\
-            // Non-breaking space (\\u00A0) preserves visual tree hierarchy in HTML <select>\
             string indent = level == 0 ? string.Empty : new string('\\u00A0', level * 4) + "\'e2\'94\'94\'e2\'94\'80 ";\
 \
             var item = new ListItem\
@@ -311,6 +245,7 @@ namespace Hurray2\
 \
         private static string _cachedToken;\
         private static DateTime _tokenExpiration = DateTime.MinValue;\
+        private static readonly JavaScriptSerializer _serializer = new JavaScriptSerializer();\
 \
         public static string GetAppleConnectToken()\
         \{\
@@ -391,7 +326,7 @@ namespace Hurray2\
                 \}\
             \};\
 \
-            string jsonPayload = JsonConvert.SerializeObject(requestPayload);\
+            string jsonPayload = _serializer.Serialize(requestPayload);\
             byte[] byteArray = Encoding.UTF8.GetBytes(jsonPayload);\
 \
             var request = (HttpWebRequest)WebRequest.Create(FloodgateUrl);\
@@ -412,8 +347,10 @@ namespace Hurray2\
                 using (var streamReader = new StreamReader(response.GetResponseStream()))\
                 \{\
                     string responseBody = await streamReader.ReadToEndAsync();\
-                    var result = JsonConvert.DeserializeObject<ClaudeResponse>(responseBody);\
-                    return result?.content?[0]?.text ?? string.Empty;\
+                    var result = _serializer.Deserialize<ClaudeResponse>(responseBody);\
+                    return (result != null && result.content != null && result.content.Count > 0)\
+                        ? result.content[0].text\
+                        : string.Empty;\
                 \}\
             \}\
             catch (WebException webEx)\
@@ -441,9 +378,16 @@ namespace Hurray2\
 \
     public class ClaudeRequest\
     \{\
-        public string model \{ get; set; \} = "anthropic.claude-sonnet-4-6";\
-        public int max_tokens \{ get; set; \} = 1024;\
-        public List<ClaudeMessage> messages \{ get; set; \} = new List<ClaudeMessage>();\
+        public string model \{ get; set; \}\
+        public int max_tokens \{ get; set; \}\
+        public List<ClaudeMessage> messages \{ get; set; \}\
+\
+        public ClaudeRequest()\
+        \{\
+            model = "anthropic.claude-sonnet-4-6";\
+            max_tokens = 1024;\
+            messages = new List<ClaudeMessage>();\
+        \}\
     \}\
 \
     public class ClaudeMessage\
