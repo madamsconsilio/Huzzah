@@ -1,7 +1,9 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;\f1\froman\fcharset0 Times-Roman;}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat0\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
 \margl1440\margr1440\vieww29700\viewh15480\viewkind0
 \deftab720
 \pard\pardeftab720\partightenfactor0
@@ -28,21 +30,60 @@ namespace Hurray2\
 \{\
     public partial class Default : Page\
     \{\
-        private int WorkspaceArtifactId => ConnectionHelper.Helper().GetActiveCaseID();\
+        private int WorkspaceArtifactId\
+        \{\
+            get\
+            \{\
+                try\
+                \{\
+                    int caseId = ConnectionHelper.Helper().GetActiveCaseID();\
+                    if (caseId > 0) return caseId;\
+                \}\
+                catch \{ \}\
+\
+                // Fallback to query string parameter (?AppID=123456)\
+                if (int.TryParse(Request.QueryString["AppID"], out int qId))\
+                \{\
+                    return qId;\
+                \}\
+                return -1;\
+            \}\
+        \}\
 \
         protected void Page_Load(object sender, EventArgs e)\
         \{\
             if (!IsPostBack)\
             \{\
-                DisplayLabel.Text = $"Active Workspace ID: \{WorkspaceArtifactId\}";\
-                RegisterAsyncTask(new PageAsyncTask(PopulateDropdownsAsync));\
+                try\
+                \{\
+                    if (WorkspaceArtifactId <= 0)\
+                    \{\
+                        DisplayLabel.Text = "Error: Unable to identify active workspace ID. Please pass ?AppID=<WorkspaceID> in URL.";\
+                        DisplayLabel.ForeColor = System.Drawing.Color.Red;\
+                        return;\
+                    \}\
+\
+                    DisplayLabel.Text = $"Active Workspace ID: \{WorkspaceArtifactId\}";\
+                    RegisterAsyncTask(new PageAsyncTask(PopulateDropdownsAsync));\
+                \}\
+                catch (Exception ex)\
+                \{\
+                    ShowError("Page_Load Error: " + ex.ToString());\
+                \}\
             \}\
         \}\
 \
         private async Task PopulateDropdownsAsync()\
         \{\
-            await PopulateFolderDropdownAsync();\
-            await PopulatePrivFieldsDropdownAsync();\
+            try\
+            \{\
+                await PopulateFolderDropdownAsync();\
+                await PopulatePrivFieldsDropdownAsync();\
+            \}\
+            catch (Exception ex)\
+            \{\
+                ShowError("PopulateDropdowns Error: " + ex.ToString());\
+            \}\
         \}\
 \
         #region Populate Folder Dropdown\
@@ -153,86 +194,99 @@ namespace Hurray2\
 \
         private async Task ExecuteClaudeWorkflowAsync()\
         \{\
-            if (string.IsNullOrEmpty(ddlDynamicOptions.SelectedValue) || string.IsNullOrEmpty(ddlFields.SelectedValue))\
+            try\
             \{\
-                lblStatus.Text = "Please select both a Folder and a Target Field.";\
-                lblStatus.ForeColor = System.Drawing.Color.Red;\
-                return;\
-            \}\
-\
-            int selectedFolderId = int.Parse(ddlDynamicOptions.SelectedValue);\
-            int selectedFieldArtifactId = int.Parse(ddlFields.SelectedValue);\
-            string userPrompt = txtUserPrompt.Text;\
-\
-            lblStatus.Text = "Querying documents and authenticating to Floodgate...";\
-            lblStatus.ForeColor = System.Drawing.Color.Blue;\
-\
-            IServicesMgr servicesMgr = ConnectionHelper.Helper().GetServicesManager();\
-\
-            using (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
-            \{\
-                var docQuery = new QueryRequest\
+                if (string.IsNullOrEmpty(ddlDynamicOptions.SelectedValue) || string.IsNullOrEmpty(ddlFields.SelectedValue))\
                 \{\
-                    ObjectType = new ObjectTypeRef \{ ArtifactTypeID = 10 \}, // 10 = Document\
-                    Condition = $"'Folder' == OBJECT \{selectedFolderId\}",\
-                    Fields = new List<FieldRef>\
-                    \{\
-                        new FieldRef \{ Name = "Control Number" \},\
-                        new FieldRef \{ Name = "Extracted Text" \}\
-                    \}\
-                \};\
-\
-                QueryResult docResults = await objectManager.QueryAsync(WorkspaceArtifactId, docQuery, 1, 5);\
-\
-                if (docResults == null || !docResults.Objects.Any())\
-                \{\
-                    lblStatus.Text = "No documents found in the selected folder.";\
-                    lblStatus.ForeColor = System.Drawing.Color.Orange;\
+                    lblStatus.Text = "Please select both a Folder and a Target Field.";\
+                    lblStatus.ForeColor = System.Drawing.Color.Red;\
                     return;\
                 \}\
 \
-                var floodgateClient = new FloodgateClient();\
-                var logs = new StringBuilder();\
+                int selectedFolderId = int.Parse(ddlDynamicOptions.SelectedValue);\
+                int selectedFieldArtifactId = int.Parse(ddlFields.SelectedValue);\
+                string userPrompt = txtUserPrompt.Text;\
 \
-                foreach (RelativityObject doc in docResults.Objects)\
+                lblStatus.Text = "Querying documents and authenticating to Floodgate...";\
+                lblStatus.ForeColor = System.Drawing.Color.Blue;\
+\
+                IServicesMgr servicesMgr = ConnectionHelper.Helper().GetServicesManager();\
+\
+                using (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
                 \{\
-                    string controlNum = doc.FieldValues.Find(f => f.Field.Name == "Control Number")?.Value?.ToString() ?? doc.ArtifactID.ToString();\
-                    string extractedText = doc.FieldValues.Find(f => f.Field.Name == "Extracted Text")?.Value?.ToString() ?? string.Empty;\
-\
-                    if (extractedText.Length > 8000)\
+                    var docQuery = new QueryRequest\
                     \{\
-                        extractedText = extractedText.Substring(0, 8000) + "... [truncated]";\
-                    \}\
-\
-                    // Send to Floodgate (Claude)\
-                    string response = await floodgateClient.CallClaudeAsync(userPrompt, extractedText);\
-                    logs.AppendLine($"[\{controlNum\}] -> Privilege Analysis:\\n\{response\}\\n");\
-\
-                    // Update selected Relativity field\
-                    var updateRequest = new UpdateRequest\
-                    \{\
-                        Object = new RelativityObjectRef \{ ArtifactID = doc.ArtifactID \},\
-                        FieldValues = new List<FieldRefValuePair>\
+                        ObjectType = new ObjectTypeRef \{ ArtifactTypeID = 10 \},\
+                        Condition = $"'Folder' == OBJECT \{selectedFolderId\}",\
+                        Fields = new List<FieldRef>\
                         \{\
-                            new FieldRefValuePair\
-                            \{\
-                                Field = new FieldRef \{ ArtifactID = selectedFieldArtifactId \},\
-                                Value = response\
-                            \}\
+                            new FieldRef \{ Name = "Control Number" \},\
+                            new FieldRef \{ Name = "Extracted Text" \}\
                         \}\
                     \};\
 \
-                    await objectManager.UpdateAsync(WorkspaceArtifactId, updateRequest);\
-                \}\
+                    QueryResult docResults = await objectManager.QueryAsync(WorkspaceArtifactId, docQuery, 1, 5);\
 \
-                lblStatus.Text = $"Successfully processed \{docResults.Objects.Count\} document(s).";\
-                lblStatus.ForeColor = System.Drawing.Color.Green;\
-                litClaudeResponse.Text = logs.ToString();\
-                divOutput.Visible = true;\
+                    if (docResults == null || !docResults.Objects.Any())\
+                    \{\
+                        lblStatus.Text = "No documents found in the selected folder.";\
+                        lblStatus.ForeColor = System.Drawing.Color.Orange;\
+                        return;\
+                    \}\
+\
+                    var floodgateClient = new FloodgateClient();\
+                    var logs = new StringBuilder();\
+\
+                    foreach (RelativityObject doc in docResults.Objects)\
+                    \{\
+                        string controlNum = doc.FieldValues.Find(f => f.Field.Name == "Control Number")?.Value?.ToString() ?? doc.ArtifactID.ToString();\
+                        string extractedText = doc.FieldValues.Find(f => f.Field.Name == "Extracted Text")?.Value?.ToString() ?? string.Empty;\
+\
+                        if (extractedText.Length > 8000)\
+                        \{\
+                            extractedText = extractedText.Substring(0, 8000) + "... [truncated]";\
+                        \}\
+\
+                        string response = await floodgateClient.CallClaudeAsync(userPrompt, extractedText);\
+                        logs.AppendLine($"[\{controlNum\}] -> Privilege Analysis:\\n\{response\}\\n");\
+\
+                        var updateRequest = new UpdateRequest\
+                        \{\
+                            Object = new RelativityObjectRef \{ ArtifactID = doc.ArtifactID \},\
+                            FieldValues = new List<FieldRefValuePair>\
+                            \{\
+                                new FieldRefValuePair\
+                                \{\
+                                    Field = new FieldRef \{ ArtifactID = selectedFieldArtifactId \},\
+                                    Value = response\
+                                \}\
+                            \}\
+                        \};\
+\
+                        await objectManager.UpdateAsync(WorkspaceArtifactId, updateRequest);\
+                    \}\
+\
+                    lblStatus.Text = $"Successfully processed \{docResults.Objects.Count\} document(s).";\
+                    lblStatus.ForeColor = System.Drawing.Color.Green;\
+                    litClaudeResponse.Text = logs.ToString();\
+                    divOutput.Visible = true;\
+                \}\
+            \}\
+            catch (Exception ex)\
+            \{\
+                ShowError("Execution Error: " + ex.ToString());\
             \}\
         \}\
 \
         #endregion\
+\
+        private void ShowError(string message)\
+        \{\
+            lblStatus.Text = "An error occurred:";\
+            lblStatus.ForeColor = System.Drawing.Color.Red;\
+            litClaudeResponse.Text = message;\
+            divOutput.Visible = true;\
+        \}\
     \}\
 \
     #region Floodgate Client & Token Acquisition\
@@ -409,4 +463,12 @@ namespace Hurray2\
 \
     #endregion\
 \}\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\fs24 \cf0 Once you upload this build and reload the page:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0\cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 If the error happened during page load or dropdown population, the page will now render and display the exact exception in the status box.\
+\ls1\ilvl0\kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Paste the error text here and we can immediately pinpoint the fix!\
 }
