@@ -1,18 +1,83 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;}
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\froman\fcharset0 Times-Bold;\f2\fmodern\fcharset0 Courier;
+}
 {\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
 {\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
-\margl1440\margr1440\vieww29700\viewh18640\viewkind0
+\margl1440\margr1440\vieww29700\viewh15480\viewkind0
 \deftab720
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f0\fs24 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 I get a bunch of errors in Visual Studio \'91JsonPropertyAttribute\'92
+\f1\b\fs28 \strokec2 1. Default.aspx\
 \pard\pardeftab720\partightenfactor0
 
-\f0\fs26 \cf0 \expnd0\expndtw0\kerning0
-\outl0\strokewidth0 \strokec2 using System;\
+\f2\b0\fs26 \cf0 <%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Hurray2.Default" Async="true" %>\
+\
+<!DOCTYPE html>\
+\
+<html xmlns="http://www.w3.org/1999/xhtml">\
+<head runat="server">\
+    <title>Hurray Privilege Analysis</title>\
+    <style>\
+        body \{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; \}\
+        .form-group \{ margin-bottom: 16px; \}\
+        .form-group label \{ display: block; font-weight: bold; margin-bottom: 6px; \}\
+        .form-control \{ width: 500px; padding: 6px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; \}\
+        .btn-primary \{ background-color: #0071e3; color: white; padding: 8px 18px; border: none; font-size: 14px; border-radius: 6px; cursor: pointer; \}\
+        .btn-primary:hover \{ background-color: #0077ed; \}\
+        .output-box \{ margin-top: 20px; padding: 12px; border: 1px solid #d2d2d7; background-color: #f5f5f7; width: 650px; white-space: pre-wrap; font-family: Menlo, Monaco, Consolas, monospace; font-size: 13px; border-radius: 6px; \}\
+    </style>\
+</head>\
+<body>\
+    <form id="form1" runat="server">\
+        <h2>Hurray - Document Privilege Analysis</h2>\
+        \
+        <div class="form-group">\
+            <asp:Label ID="DisplayLabel" runat="server" ForeColor="#0071e3" Font-Bold="true"></asp:Label>\
+        </div>\
+\
+        <div class="form-group">\
+            <label for="ddlDynamicOptions">1. Select Folder:</label>\
+            <asp:DropDownList ID="ddlDynamicOptions" runat="server" CssClass="form-control"></asp:DropDownList>\
+        </div>\
+\
+        <div class="form-group">\
+            <label for="ddlFields">2. Select Target PRIV Field:</label>\
+            <asp:DropDownList ID="ddlFields" runat="server" CssClass="form-control"></asp:DropDownList>\
+        </div>\
+\
+        <div class="form-group">\
+            <label for="txtUserPrompt">3. Instructions / Prompt for Claude:</label>\
+            <asp:TextBox ID="txtUserPrompt" runat="server" TextMode="MultiLine" Rows="4" CssClass="form-control" \
+                Text="Analyze the document text and determine if it contains privileged legal communications (Attorney-Client or Work-Product). State your reasoning and confidence level."></asp:TextBox>\
+        </div>\
+\
+        <div class="form-group">\
+            <asp:Button ID="btnRunClaude" runat="server" Text="Execute Claude Analysis" CssClass="btn-primary" OnClick="btnRunClaude_Click" />\
+        </div>\
+\
+        <div class="form-group">\
+            <label>Output Status:</label>\
+            <asp:Label ID="lblStatus" runat="server" Font-Bold="true"></asp:Label>\
+            <div id="divOutput" runat="server" class="output-box" visible="false">\
+                <asp:Literal ID="litClaudeResponse" runat="server"></asp:Literal>\
+            </div>\
+        </div>\
+    </form>\
+</body>\
+</html>\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f1\b\fs28 \cf0 2. Default.aspx.cs\
+\pard\pardeftab720\partightenfactor0
+
+\f2\b0\fs26 \cf0 using System;\
 using System.Collections.Generic;\
 using System.Diagnostics;\
 using System.IO;\
 using System.Linq;\
-using System.Net.Http;\
+using System.Net;\
 using System.Text;\
 using System.Threading.Tasks;\
 using System.Web.UI;\
@@ -28,7 +93,6 @@ namespace Hurray2\
 \{\
     public partial class Default : Page\
     \{\
-        // Resolves the current workspace ID in a Relativity Custom Page context\
         private int WorkspaceArtifactId => ConnectionHelper.Helper().GetActiveCaseID();\
 \
         protected void Page_Load(object sender, EventArgs e)\
@@ -46,7 +110,7 @@ namespace Hurray2\
             await PopulatePrivFieldsDropdownAsync();\
         \}\
 \
-        #region Folder Dropdown\
+        #region Populate Folder Dropdown\
 \
         private async Task PopulateFolderDropdownAsync()\
         \{\
@@ -93,7 +157,7 @@ namespace Hurray2\
 \
         #endregion\
 \
-        #region PRIV Field Dropdown\
+        #region Populate PRIV Field Dropdown\
 \
         private async Task PopulatePrivFieldsDropdownAsync()\
         \{\
@@ -104,7 +168,6 @@ namespace Hurray2\
 \
             using (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
             \{\
-                // Query Document fields (ObjectType 10) whose Name contains 'PRIV'\
                 var queryRequest = new QueryRequest\
                 \{\
                     ObjectType = new ObjectTypeRef \{ ArtifactTypeID = 14 \}, // 14 = Field\
@@ -174,7 +237,6 @@ namespace Hurray2\
 \
             using (IObjectManager objectManager = servicesMgr.CreateProxy<IObjectManager>(ExecutionIdentity.CurrentUser))\
             \{\
-                // Query documents located in the selected folder\
                 var docQuery = new QueryRequest\
                 \{\
                     ObjectType = new ObjectTypeRef \{ ArtifactTypeID = 10 \}, // 10 = Document\
@@ -203,17 +265,16 @@ namespace Hurray2\
                     string controlNum = doc.FieldValues.Find(f => f.Field.Name == "Control Number")?.Value?.ToString() ?? doc.ArtifactID.ToString();\
                     string extractedText = doc.FieldValues.Find(f => f.Field.Name == "Extracted Text")?.Value?.ToString() ?? string.Empty;\
 \
-                    // Truncate text if needed to fit token limits\
                     if (extractedText.Length > 8000)\
                     \{\
                         extractedText = extractedText.Substring(0, 8000) + "... [truncated]";\
                     \}\
 \
-                    // Call Floodgate via AppleConnect OIDC token\
+                    // Send to Floodgate (Claude)\
                     string response = await floodgateClient.CallClaudeAsync(userPrompt, extractedText);\
                     logs.AppendLine($"[\{controlNum\}] -> Privilege Analysis:\\n\{response\}\\n");\
 \
-                    // Update the selected PRIV field with the analysis\
+                    // Update selected Relativity field\
                     var updateRequest = new UpdateRequest\
                     \{\
                         Object = new RelativityObjectRef \{ ArtifactID = doc.ArtifactID \},\
@@ -244,7 +305,6 @@ namespace Hurray2\
 \
     public class FloodgateClient\
     \{\
-        private static readonly HttpClient _httpClient = new HttpClient();\
         private const string FloodgateUrl = "https://floodgate.g.apple.com/api/anthropic/v1/messages";\
         private const string ClientId = "hvys3fcwcteqrvw3qzkvtk86viuoqv";\
         private const string Scopes = "openid,dsid,accountname,email,groups";\
@@ -252,9 +312,6 @@ namespace Hurray2\
         private static string _cachedToken;\
         private static DateTime _tokenExpiration = DateTime.MinValue;\
 \
-        /// <summary>\
-        /// Executes `appleconnect` command to acquire an OIDC id-token.\
-        /// </summary>\
         public static string GetAppleConnectToken()\
         \{\
             if (!string.IsNullOrEmpty(_cachedToken) && DateTime.UtcNow < _tokenExpiration)\
@@ -316,90 +373,94 @@ namespace Hurray2\
             \}\
         \}\
 \
-        /// <summary>\
-        /// Calls the Apple Floodgate Anthropic Messages API.\
-        /// </summary>\
         public async Task<string> CallClaudeAsync(string userPrompt, string documentText, string model = "anthropic.claude-sonnet-4-6")\
         \{\
             string token = GetAppleConnectToken();\
 \
             var requestPayload = new ClaudeRequest\
             \{\
-                Model = model,\
-                MaxTokens = 1024,\
-                Messages = new List<ClaudeMessage>\
+                model = model,\
+                max_tokens = 1024,\
+                messages = new List<ClaudeMessage>\
                 \{\
                     new ClaudeMessage\
                     \{\
-                        Role = "user",\
-                        Content = $"\{userPrompt\}\\n\\n--- DOCUMENT TEXT ---\\n\{documentText\}"\
+                        role = "user",\
+                        content = $"\{userPrompt\}\\n\\n--- DOCUMENT TEXT ---\\n\{documentText\}"\
                     \}\
                 \}\
             \};\
 \
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, FloodgateUrl)\
+            string jsonPayload = JsonConvert.SerializeObject(requestPayload);\
+            byte[] byteArray = Encoding.UTF8.GetBytes(jsonPayload);\
+\
+            var request = (HttpWebRequest)WebRequest.Create(FloodgateUrl);\
+            request.Method = "POST";\
+            request.ContentType = "application/json";\
+            request.UserAgent = "HurrayCustomPage/1.0";\
+            request.Headers.Add("Authorization", $"Bearer \{token\}");\
+            request.ContentLength = byteArray.Length;\
+\
+            using (var dataStream = await request.GetRequestStreamAsync())\
             \{\
-                Content = new StringContent(JsonConvert.SerializeObject(requestPayload), Encoding.UTF8, "application/json")\
-            \};\
-\
-            requestMessage.Headers.Add("Authorization", $"Bearer \{token\}");\
-            requestMessage.Headers.Add("User-Agent", "HurrayCustomPage/1.0");\
-\
-            HttpResponseMessage response = await _httpClient.SendAsync(requestMessage);\
-            string responseBody = await response.Content.ReadAsStringAsync();\
-\
-            if (!response.IsSuccessStatusCode)\
-            \{\
-                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)\
-                \{\
-                    _cachedToken = null;\
-                \}\
-                throw new Exception($"Floodgate API error (\{response.StatusCode\}): \{responseBody\}");\
+                await dataStream.WriteAsync(byteArray, 0, byteArray.Length);\
             \}\
 \
-            var result = JsonConvert.DeserializeObject<ClaudeResponse>(responseBody);\
-            return result?.Content?[0]?.Text ?? string.Empty;\
+            try\
+            \{\
+                using (var response = (HttpWebResponse)await request.GetResponseAsync())\
+                using (var streamReader = new StreamReader(response.GetResponseStream()))\
+                \{\
+                    string responseBody = await streamReader.ReadToEndAsync();\
+                    var result = JsonConvert.DeserializeObject<ClaudeResponse>(responseBody);\
+                    return result?.content?[0]?.text ?? string.Empty;\
+                \}\
+            \}\
+            catch (WebException webEx)\
+            \{\
+                if (webEx.Response is HttpWebResponse errorResponse)\
+                \{\
+                    if (errorResponse.StatusCode == HttpStatusCode.Unauthorized)\
+                    \{\
+                        _cachedToken = null;\
+                    \}\
+                    using (var reader = new StreamReader(errorResponse.GetResponseStream()))\
+                    \{\
+                        string errorText = await reader.ReadToEndAsync();\
+                        throw new Exception($"Floodgate API error (\{errorResponse.StatusCode\}): \{errorText\}");\
+                    \}\
+                \}\
+                throw;\
+            \}\
         \}\
     \}\
 \
     #endregion\
 \
-    #region Claude Models (Anthropic DTOs)\
+    #region Claude DTOs\
 \
     public class ClaudeRequest\
     \{\
-        [JsonProperty("model")]\
-        public string Model \{ get; set; \} = "anthropic.claude-sonnet-4-6";\
-\
-        [JsonProperty("max_tokens")]\
-        public int MaxTokens \{ get; set; \} = 1024;\
-\
-        [JsonProperty("messages")]\
-        public List<ClaudeMessage> Messages \{ get; set; \} = new List<ClaudeMessage>();\
+        public string model \{ get; set; \} = "anthropic.claude-sonnet-4-6";\
+        public int max_tokens \{ get; set; \} = 1024;\
+        public List<ClaudeMessage> messages \{ get; set; \} = new List<ClaudeMessage>();\
     \}\
 \
     public class ClaudeMessage\
     \{\
-        [JsonProperty("role")]\
-        public string Role \{ get; set; \}\
-\
-        [JsonProperty("content")]\
-        public string Content \{ get; set; \}\
+        public string role \{ get; set; \}\
+        public string content \{ get; set; \}\
     \}\
 \
     public class ClaudeResponse\
     \{\
-        [JsonProperty("content")]\
-        public List<ClaudeContentBlock> Content \{ get; set; \}\
+        public List<ClaudeContentBlock> content \{ get; set; \}\
     \}\
 \
     public class ClaudeContentBlock\
     \{\
-        [JsonProperty("type")]\
-        public string Type \{ get; set; \}\
-\
-        [JsonProperty("text")]\
-        public string Text \{ get; set; \}\
+        public string type \{ get; set; \}\
+        public string text \{ get; set; \}\
     \}\
 \
     #endregion\
